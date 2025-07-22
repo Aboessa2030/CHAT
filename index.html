@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>بنك الهجلة — دردشة المستخدمين</title>
+  <style>
+    body {
+      margin:0; padding:0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f0f2f5;
+      direction: rtl;
+    }
+    .screen {
+      display:none;
+      height:100vh;
+      align-items:center;
+      justify-content:center;
+    }
+    .active { display:flex; }
+    .login-box, .chat-box {
+      background:#fff;
+      padding:25px;
+      box-shadow:0 2px 12px rgba(0,0,0,0.1);
+      border-radius:10px;
+      width:90%;
+      max-width:400px;
+      text-align:center;
+    }
+    h2 { margin-bottom:20px; color:#333; }
+    .login-box input, .chat-box input {
+      width:100%;
+      padding:10px;
+      margin:8px 0;
+      border:1px solid #ccc;
+      border-radius:5px;
+      font-size:1rem;
+    }
+    .login-box button, .chat-box button {
+      width:100%;
+      padding:10px;
+      margin-top:12px;
+      background:#007bff;
+      color:#fff;
+      border:none;
+      border-radius:5px;
+      font-size:1rem;
+      cursor:pointer;
+      transition:background .2s;
+    }
+    .login-box button:hover, .chat-box button:hover {
+      background:#0056b3;
+    }
+    .chat-window {
+      height:300px;
+      overflow-y:auto;
+      text-align:right;
+      padding:10px;
+      border:1px solid #ddd;
+      margin-bottom:10px;
+      border-radius:5px;
+      background:#f9f9f9;
+    }
+    .msg {
+      margin:6px 0;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .msg.other {
+      justify-content:flex-start;
+    }
+    .msg .bubble {
+      padding:8px 12px;
+      border-radius:16px;
+      max-width:70%;
+      display:inline-block;
+    }
+    .msg.me .bubble { background:#007bff; color:#fff; }
+    .msg.other .bubble { background:#e4e6eb; color:#333; }
+  </style>
+</head>
+<body>
+
+  <!-- شاشة تسجيل الدخول -->
+  <div class="screen active" id="login-screen">
+    <div class="login-box">
+      <h2>تسجيل الدخول</h2>
+      <input type="text" id="username" placeholder="اسم المستخدم" />
+      <input type="password" id="password" placeholder="كلمة المرور" />
+      <button onclick="login()">دخول</button>
+    </div>
+  </div>
+
+  <!-- شاشة الدردشة -->
+  <div class="screen" id="chat-screen">
+    <div class="chat-box">
+      <h2 id="welcome-title">مرحبا</h2>
+      <div class="chat-window" id="chat-window"></div>
+      <input type="text" id="chat-input" placeholder="اكتب رسالتك..." onkeydown="if(event.key==='Enter')sendMsg()" />
+      <button onclick="sendMsg()">إرسال</button>
+      <button style="background:#dc3545;margin-top:8px;" onclick="logout()">تسجيل الخروج</button>
+    </div>
+  </div>
+
+  <script>
+    const users = {
+      'واحد': '1',
+      'اثنين': '2'
+    };
+    let currentUser;
+
+    function login() {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if (users[u] && users[u] === p) {
+        currentUser = u;
+        openChat();
+      } else {
+        alert('خطأ في اسم المستخدم أو كلمة المرور');
+      }
+    }
+
+    function openChat() {
+      document.getElementById('login-screen').classList.remove('active');
+      document.getElementById('chat-screen').classList.add('active');
+      document.getElementById('welcome-title').innerText = `مرحبًا ${currentUser}`;
+      
+      // تحميل محفوظات الدردشة:
+      const key = 'chat-history';
+      const hist = sessionStorage.getItem(key);
+      window.chatHistory = hist ? JSON.parse(hist) : [];
+      renderMsgs();
+      scrollEnd();
+    }
+
+    function sendMsg() {
+      const inp = document.getElementById('chat-input');
+      const text = inp.value.trim();
+      if (!text) return;
+      const msg = { from: currentUser, text, at: Date.now() };
+      window.chatHistory.push(msg);
+      sessionStorage.setItem('chat-history', JSON.stringify(window.chatHistory));
+      inp.value = '';
+      renderMsgs();
+      scrollEnd();
+    }
+
+    function renderMsgs() {
+      const div = document.getElementById('chat-window');
+      div.innerHTML = '';
+      window.chatHistory.forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'msg ' + (m.from === currentUser ? 'me' : 'other');
+        el.innerHTML = `<span class="bubble">${m.text}</span>`;
+        div.appendChild(el);
+      });
+    }
+
+    function scrollEnd() {
+      const w = document.getElementById('chat-window');
+      w.scrollTop = w.scrollHeight;
+    }
+
+    function logout() {
+      currentUser = null;
+      document.getElementById('chat-screen').classList.remove('active');
+      document.getElementById('login-screen').classList.add('active');
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+  </script>
+
+</body>
+</html>
+
+
+
